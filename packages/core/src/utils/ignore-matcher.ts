@@ -21,11 +21,13 @@ export class IgnoreMatcher {
             return true;
         }
 
-        if (this.matcher.ignores(normalizedPath)) {
-            return true;
+        // Directories are matched only with a trailing slash, so `*` followed by `!*/`
+        // (a common .dockerignore allowlist) does not skip every directory.
+        if (isDirectory) {
+            return this.matcher.ignores(`${normalizedPath}/`);
         }
 
-        return isDirectory && this.matcher.ignores(`${normalizedPath}/`);
+        return this.matcher.ignores(normalizedPath);
     }
 
     private normalizePath(relativePath: string): string {
