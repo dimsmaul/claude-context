@@ -250,6 +250,31 @@ describe('Context ignore pattern isolation', () => {
         ]);
     });
 
+    it('descends into directories with a dockerignore-style allowlist and lets request patterns win', async () => {
+        const project = path.join(tempRoot, 'project-with-allowlist');
+        await fs.mkdir(path.join(project, 'pkg', 'svc'), { recursive: true });
+        await fs.writeFile(path.join(project, '.dockerignore'), ['*', '!*/', '!*.go', ''].join('\n'));
+        await fs.writeFile(path.join(project, 'pkg', 'svc', 'svc.go'), 'package svc');
+        await fs.writeFile(path.join(project, 'pkg', 'svc', 'svc_test.go'), 'package svc');
+        await fs.writeFile(path.join(project, 'pkg', 'svc', 'notes.md'), 'not allowlisted');
+
+        const vectorDatabase = createVectorDatabase();
+        const context = new Context({
+            embedding: new TestEmbedding(),
+            vectorDatabase,
+            codeSplitter: new TestSplitter(),
+        });
+
+        await context.indexCodebase(project, undefined, false, ['**/*_test.go']);
+
+        const indexedPaths = vectorDatabase.insert.mock.calls
+            .flatMap(([, documents]) => documents)
+            .map(document => document.relativePath.replace(/\\/g, '/'))
+            .sort();
+
+        expect(indexedPaths).toEqual(['pkg/svc/svc.go']);
+    });
+
     it('skips dotfiles and dot directories during initial indexing', async () => {
         const project = path.join(tempRoot, 'project');
         await fs.mkdir(path.join(project, '.config'), { recursive: true });

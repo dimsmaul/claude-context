@@ -1184,10 +1184,11 @@ export class Context {
             const globalIgnorePatterns = await this.loadGlobalIgnoreFile();
             fileBasedPatterns.push(...globalIgnorePatterns);
 
+            // Request patterns go last so they win over `!` negations in repo ignore files
             const effectiveIgnorePatterns = this.dedupePatterns([
                 ...this.baseIgnorePatterns,
-                ...additionalIgnorePatterns,
-                ...fileBasedPatterns
+                ...fileBasedPatterns,
+                ...additionalIgnorePatterns
             ]);
             // Preserve the previous observable getIgnorePatterns() behavior for
             // sequential callers, while all indexing paths use the local return
