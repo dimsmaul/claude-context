@@ -22,6 +22,9 @@ export interface ContextMcpConfig {
     // Vector database configuration
     milvusAddress?: string; // Optional, can be auto-resolved from token
     milvusToken?: string;
+    // Qdrant is used instead of Milvus when QDRANT_URL is set
+    qdrantUrl?: string;
+    qdrantApiKey?: string;
     collectionNameOverride?: string;
 }
 
@@ -184,6 +187,8 @@ export function createMcpConfig(): ContextMcpConfig {
         // Vector database configuration - address can be auto-resolved from token
         milvusAddress: envManager.get('MILVUS_ADDRESS'), // Optional, can be resolved from token
         milvusToken: envManager.get('MILVUS_TOKEN'),
+        qdrantUrl: envManager.get('QDRANT_URL'),
+        qdrantApiKey: envManager.get('QDRANT_API_KEY'),
         collectionNameOverride: envManager.get('CODE_CHUNKS_COLLECTION_NAME_OVERRIDE')
     };
 
@@ -197,7 +202,11 @@ export function logConfigurationSummary(config: ContextMcpConfig): void {
     console.log(`[MCP]   Server: ${config.name} v${config.version}`);
     console.log(`[MCP]   Embedding Provider: ${config.embeddingProvider}`);
     console.log(`[MCP]   Embedding Model: ${config.embeddingModel}`);
-    console.log(`[MCP]   Milvus Address: ${config.milvusAddress || (config.milvusToken ? '[Auto-resolve from token]' : '[Not configured]')}`);
+    if (config.qdrantUrl) {
+        console.log(`[MCP]   Qdrant URL: ${config.qdrantUrl}`);
+    } else {
+        console.log(`[MCP]   Milvus Address: ${config.milvusAddress || (config.milvusToken ? '[Auto-resolve from token]' : '[Not configured]')}`);
+    }
     if (config.collectionNameOverride) {
         console.log(`[MCP]   Collection Name Override: ✅ Configured`);
     }
